@@ -1,12 +1,12 @@
 # Launch Configuration
 resource "aws_launch_configuration" "example" {
-  image_id = "ami-0261755bbcb8c4a84"
-  instance_type = "t2.micro"
+  image_id = var.aws_ami
+  instance_type = var.aws_instance_type
   security_groups = [aws_security_group.instance.id]
   user_data = <<-EOF
                 #!/bin/bash
-                sudo apt update
-                sudo apt install nginx -y
+                sudo yum update
+                sudo yum install nginx -y
                 EOF
   lifecycle {
     create_before_destroy = true
@@ -27,7 +27,6 @@ resource "aws_security_group" "instance" {
 
   egress {
     from_port = 0
-
     to_port = 0
     protocol = "-1"
     cidr_blocks = ["0.0.0.0/0"]
@@ -42,8 +41,8 @@ resource "aws_autoscaling_group" "example" {
   target_group_arns = [aws_lb_target_group.asg.arn]
   health_check_type = "ELB"
   
-  min_size = 2
-  max_size = 10
+  min_size = 3
+  max_size = 9
 
   tag {
     key = "Name"
@@ -129,10 +128,4 @@ resource "aws_lb_target_group" "asg" {
     healthy_threshold = 2
     unhealthy_threshold = 2
   }
-}
-
-# DNS Name of LB
-output "alb_dns_name" {
-  value       = aws_lb.example.dns_name
-  description = "The domain name of the load balancer"
 }

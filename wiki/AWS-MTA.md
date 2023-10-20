@@ -187,3 +187,7 @@
             - action
                 - type = forward
                 - target_group_arn = aws_lb_target_group.asg.arn
+
+Stage 2 - DB Addition
+
+![Alt text](tur3_0309.png)

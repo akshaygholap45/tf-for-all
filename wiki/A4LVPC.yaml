@@ -361,6 +361,7 @@ Resources:
       Path: /
       Roles:
         - !Ref WordpressRole
+# CloudWatch Agent
   CWAgentConfig:
     Type: AWS::SSM::Parameter
     Properties:
