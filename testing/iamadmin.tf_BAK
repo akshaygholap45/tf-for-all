@@ -12,7 +12,7 @@ resource "aws_iam_role" "WebserverRole" {
         }
       },
     ]
-    Path = "/",
+    # Path = "/",
     ManagedPolicyArnsc = [
       "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy",
       "arn:aws:iam::aws:policy/AmazonSSMFullAccess",

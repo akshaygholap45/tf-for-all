@@ -23,15 +23,6 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "bucket_encryption
     }
   }
 }
-output "s3_bucket_arn" {
-  value       = aws_s3_bucket.terraform_state.arn
-  description = "The ARN of the S3 bucket"
-}
-
-output "dynamodb_table_name" {
-  value       = aws_dynamodb_table.terraform_locks.name
-  description = "The name of the DynamoDB table"
-}
 # Block public access to S3 bucket
 resource "aws_s3_bucket_public_access_block" "s3_block_public_access" {
   bucket = aws_s3_bucket.terraform_state.id

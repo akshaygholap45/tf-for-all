@@ -22,10 +22,15 @@ variable "aws_instance_type" {
 
 variable "aws_ami" {
     type = string
-    default = "ami-0df435f331839b2d6"
+    default = "ami-0261755bbcb8c4a84"
 }
 
 variable "server_port" {
     type = number
-    default = 80
+    default = 8080
+}
+
+variable "cluster_name" {
+    description = "The name of the cluster"
+    type = string
 }
