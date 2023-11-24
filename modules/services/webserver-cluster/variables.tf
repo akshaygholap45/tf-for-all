@@ -1,3 +1,11 @@
+locals {
+    http_port = 80
+    any_port = 0
+    any_protocol = "-1"
+    tcp_protocol = "tcp"
+    all_ips = ["0.0.0.0/0"]
+}
+
 variable "aws_access_key" {
     description = "AWS Access Key"
     type = string
@@ -22,9 +30,18 @@ variable "aws_instance_type" {
 
 variable "aws_ami" {
     type = string
-    default = "ami-0261755bbcb8c4a84"
+    default = "ami-01bc990364452ab3e"
 }
 
+variable "min_size" {
+    type = number
+    description = "The minimum number of EC2 Instances in ASG"
+}
+
+variable "max_size" {
+    type = number
+    description = "The maximum number of EC2 Instances in ASG"
+}
 variable "server_port" {
     type = number
     default = 80

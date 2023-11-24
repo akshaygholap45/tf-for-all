@@ -17,5 +17,7 @@ module "webserver_cluster" {
   cluster_name   = "webservers-stage"
   aws_access_key = var.aws_access_key
   aws_secret_key = var.aws_secret_key
+  min_size = 2
+  max_size = 4
 }
 
