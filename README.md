@@ -3,12 +3,12 @@
 >Automate your Infrastructure with Terraform
 
 1. What is Terraform
-    - Infrastructure as a code tool that helps you declare the configuration for your server deployment on any cloud platform or your on-premise infrastructure.
+    - Infrastructure as code tool that helps you declare the configuration for your server deployment on any cloud platform or your on-premise infrastructure.
     - Terraform creates and manages resources on cloud platforms and other services through their application programming interfaces (APIs). Providers enable Terraform to work with virtually any platform or service with an accessible API.
     - Terraform makes use of HCL (HashiCorp Configuration Language) which is easy to understand
 
 2. Why you need it
-    - Infrastructure deployment includes a lot of factors related to server environment, incoming and outgoing network, user authentication and authorization strategy.
+    - Infrastructure deployment includes a lot of factors related to the server environment, incoming and outgoing network, user authentication and authorization strategy.
     - One of the most crucial parts of the infrastructure is to maintain the steady state of the user configuration, lifecycle of the server and stability of your application deployed on those servers.
     - Terraform is used to automate infrastructure provisioning using reusable, shareable, human-readable configuration files. The tool can automate infrastructure provisioning in both on-premises and cloud environments.
 
@@ -20,11 +20,173 @@
         - Terraform has a huge list of providers. A complete list of providers can be found here.
 
     2. How to Use Providers
-        - Providers are released separately from Terraform itself and have their own version numbers.
+        - Providers are released separately from Terraform itself and have their version numbers.
+        - Implementing VMs and Containers can be a tedious task when you need to manage them on a larger scale. Terraform is the best tool to automate the provisioning and deployment of such resources in an instant. It provides a plan to deploy or destroy the infrastructure and helps you to efficiently maintain the resources based on their versions.
 
-Implementing VMs and Containers can be a tedious task when you need to manage them on larger scale. Terraform is the best tool to automate the provisioning and deployment of such resources in an instant. It provides plan to deploy or destroy the infrastructure and helps you to efficiently maintain the resources based on their versions.
+Today we will deep dive into how to use Terraform more efficiently with Multiple providers for maintaining our hybrid infrastructure.
 
-Today we will deep dive into how to use terraform tool more efficiently with Multiple providers at once for maintaining our hybrid infrastructure.
+## Phase 1: Generate API token for Terraform
+
+1. Go to Proxmox Web UI. Select Datacenter and look for the 'API Token' tab.
+
+2. Structure your variables to make use of this API token and Secret
+
+    Token ID is User-defined. You can also create another user instead of root and include that user for token creation.
+
+    API Token ID and Secret is a one-time thing, once it is generated it will not be available for the next time. So make sure you have copied it down before closing the Token window.
+
+    ![Alt text](image-12.png)
+
+    For now, I'm using the **.tfvar** file to store these credentials which is not a very secure way to deal with the secrets for your terraform configuration. You can make use of environment variables or use any password manager for the most secure way to handle the API token and credentials.
+
+    Your .tfvar file should look like this:
+
+    ```bash
+    proxmox_api_url = "https://172.16.205.150:8006/api2/json"
+    proxmox_api_token_id = "root@pam!terra-api"
+    proxmox_api_token_secret = "ef95a8ab-d04a-4d1e-886e-3dbe2150bf5b"
+    ```
+
+    **[ Note: Never store your API token credentials on any git repository. This is just a testing project, it is not recommended to follow this approach for handling credentials in the production environment. ]**
+
+## Phase 2: Installing Proxmox Provider
+
+1. Proxmox doesn't have an official Terraform Provider, so we will be using the provider maintained by 'Telmate'.
+
+    Link for Provider: `https://registry.terraform.io/providers/Telmate/proxmox/latest`
+
+    A Terraform provider is responsible for understanding API interactions and exposing resources. The Proxmox provider uses the Proxmox API. This provider exposes two resources: proxmox_vm_qemu and proxmox_lxc.
+
+2. Installation Steps:
+    To install this provider, copy and paste this code into your Terraform configuration (include a version tag).
+
+    ```hcl
+    terraform {
+    required_providers {
+        proxmox = {
+            source  = "telmate/proxmox"
+            version = "<version tag>"
+            }
+        }
+    }
+    ```
+
+    Here is the sample provider file example.
+
+    ```hcl
+    terraform {
+    required_providers {
+        proxmox = {
+            source = "Telmate/proxmox"
+            version = "2.9.14"
+            }
+        }
+    }
+    
+    variable "proxmox_api_url" {
+    type = string
+    }
+
+
+    variable "proxmox_api_token_id" {
+    type = string
+    sensitive = true    // Marking it as sensitive Terraform will not store this variable in its logs
+    }
+
+    variable "proxmox_api_token_secret" {
+    type = string
+    sensitive = true
+    }
+
+    provider "proxmox" {
+    pm_api_url = var.proxmox_api_url
+    pm_api_token_id = var.proxmox_api_token_id
+    pm_api_token_secret = var.proxmox_api_token_secret
+    pm_tls_insecure = true  // Necessary if you are not using ssl certificate
+
+    }
+    ```
+
+    Then, run
+
+    `$ terraform init`
+
+    You should see the following marking the successful plugin installation:
+
+    ```[...]
+    Initializing provider plugins...
+    - Finding registry.example.com/telmate/proxmox versions matching ">= 1.0.0"...
+    - Installing registry.example.com/telmate/proxmox v1.0.0...
+    - Installed registry.example.com/telmate/proxmox v1.0.0 (unauthenticated)
+
+    Terraform has been successfully initialized!
+    [...]
+    ```
+
+## Phase 3: Deploying the VM instance using Terraform
+
+1. We will be using the template of the Ubuntu server created earlier. You can either use such a template or use an ISO file to create an instance.
+
+2. Creating a terraform configuration file for the VM instance
+
+    Your Terraform configuration file would look like this.
+
+    ```hcl
+    resource "proxmox_vm_qemu" "demo_node01" {
+    target_node = "soc-pve-03"
+    name = "ubuntu-pmx-01"
+    desc = "Ubuntu Server Using Terraform Proxmox Provider"
+    agent = 0
+
+    clone = "debian12"
+    cores = 1
+    sockets = 1
+    cpu = "host"
+    memory = 2048
+
+    network {
+        bridge = "vmbr0"
+        model = "virtio"
+    }
+
+    disk {
+        storage = "HDD"
+        type = "scsi"
+        size = "15G"
+    }
+
+    }
+    ```
+
+3. Run `terraform plan`
+   - This creates an execution plan, which lets you preview the changes that Terraform plans to make to your infrastructure.
+
+4. Run `terraform apply`
+    - Approve the plan using **yes** and it will execute the actions proposed in a Terraform plan to create the instance.
+
+    ```bash
+    Plan: 1 to add, 0 to change, 0 to destroy.
+
+    Do you want to perform these actions?
+    Terraform will perform the actions described above.
+    Only 'yes' will be accepted to approve.
+
+    Enter a value: yes
+
+    proxmox_vm_qemu.demo_node01: Creating...
+    proxmox_vm_qemu.demo_node01: Still creating... [10s elapsed]
+    proxmox_vm_qemu.demo_node01: Still creating... [20s elapsed]
+    proxmox_vm_qemu.demo_node01: Still creating... [30s elapsed]
+    proxmox_vm_qemu.demo_node01: Still creating... [40s elapsed]
+    proxmox_vm_qemu.demo_node01: Still creating... [50s elapsed]
+    proxmox_vm_qemu.demo_node01: Creation complete after 51s [id=soc-pve-03/qemu/106]
+
+    Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
+    ```
+
+    - Refer the screenshot below showing newly spawned VM (ubuntu-pmx-01) using the template "debian12" mentioned in the Terraform code.
+
+    ![Alt text](image-13.png)
 
 ---
 
@@ -55,14 +217,14 @@ Today we will deep dive into how to use terraform tool more efficiently with Mul
 
         [] Enable DNS resolution
 
-        [] Enable DNS hostnames
+        [] Enable DNS hostname
 
     You will end up with below architecture
     ![Alt text](image-6.png)
 
 6. VPC Subnets
     - AZ Resilient
-    - subset of VPC CIDR
+    - subset of a VPC CIDR
     - Free communication between subnets in same VPC
     - 5 reserved IPs per subnet
         ![Alt text](image-7.png)
