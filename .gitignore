@@ -7,4 +7,4 @@ terraform.tfstate.backup
 credential.*
 *.tfvars
 *.log
-template-credentials.pkr.hcl
+creds.pkr.hcl
