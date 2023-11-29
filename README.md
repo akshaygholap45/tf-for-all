@@ -184,7 +184,7 @@ Today we will deep dive into how to use Terraform more efficiently with Multiple
     Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
     ```
 
-    - Refer the screenshot below showing newly spawned VM (ubuntu-pmx-01) using the template "debian12" mentioned in the Terraform code.
+    - Refer screenshot below showing the newly spawned VM (ubuntu-pmx-01) using the template "debian12" mentioned in the Terraform code.
 
     ![Alt text](image-13.png)
 
